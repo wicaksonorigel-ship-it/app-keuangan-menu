@@ -23,12 +23,14 @@
   var formMenu = $('form-menu');
   var tabelMenuBody = $('#tabel-menu tbody');
   var formResep = $('form-resep');
-  var daftarResep = $('daftar-resep');
+  var resepList = $('resep-list');
+  var resepDetail = $('resep-detail');
   var tableProdukBody = $('#tabel-produk tbody');
   var chartMonthly = $('chart-monthly');
   var chartCategory = $('chart-category');
   var menuPop = $('menu-pop');
   var productPop = $('product-pop');
+  var recipePop = $('recipe-pop');
   var sourceStatus = $('source-status');
   var searchInput = $('search-input');
   var searchResults = $('search-results');
@@ -40,16 +42,27 @@
   var importInput = $('import-input');
   var importInputMenu = $('import-input-menu');
   var themeToggle = $('theme-toggle');
+  var paketanCheck = $('paketan-check');
 
   var SOURCES = APP_DATA.sources || [];
   var PRODUCTS = APP_DATA.products || [];
+  var scalerResep = 1;
 
   function loadLedger() { try { return JSON.parse(localStorage.getItem('starhermes_ledger')) || []; } catch (e) { return []; } }
   function saveLedger() { localStorage.setItem('starhermes_ledger', JSON.stringify(ledger)); }
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function rupiah(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function fmtDate(iso) { if (!iso) return ''; var d = new Date(iso + 'T00:00:00'); if (isNaN(d)) return iso; return d.toLocaleDateString('id-ID'); }
+  function youtubeId(url) { if (!url) return ''; var m = url.match(/[?&]v=([^&]+)/); return m ? m[1] : url; }
+  function parseQty(qty, mult) {
+    if (!qty) return '';
+    if (qty === 'secukupnya' || qty === '' || qty === null) return 'secukupnya';
+    var n = parseFloat(qty);
+    if (isNaN(n)) return qty;
+    var v = n * (mult || 1);
+    return (v % 1 === 0 ? v : v.toFixed(2).replace(/(\.\d*?[1-9])0+$/, '$1')) + ' ' + satuanQty(qty);
+  }
+  function satuanQty(qty) { return (qty || '').toString().trim().match(/[a-zA-Z]+/); }
 
   var ledger = loadLedger();
 
@@ -65,19 +78,21 @@
   }
   function topMenu() {
     var counts = {};
-    ledger.forEach(function (l) {
-      if (l.jenis === 'pemasukan') { APP_DATA.menu.forEach(function (m) { if (m.nama.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[m.nama] = (counts[m.nama] || 0) + 1; }); }
-    });
+    ledger.forEach(function (l) { if (l.jenis === 'pemasukan') { APP_DATA.menu.forEach(function (m) { if (m.nama.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[m.nama] = (counts[m.nama] || 0) + 1; }); } });
     return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
   }
   function productSales() {
     var counts = {};
-    ledger.forEach(function (l) {
-      if (l.jenis === 'pemasukan') { PRODUCTS.forEach(function (p) { if (p.nama.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[p.nama] = (counts[p.nama] || 0) + 1; }); }
-    });
+    ledger.forEach(function (l) { if (l.jenis === 'pemasukan') { PRODUCTS.forEach(function (p) { if (p.nama.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[p.nama] = (counts[p.nama] || 0) + 1; }); } });
+    return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  }
+  function recipeSales() {
+    var counts = {};
+    ledger.forEach(function (l) { if (l.jenis === 'pemasukan') { APP_DATA.recipes.forEach(function (r) { if (r.judul.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[r.judul] = (counts[r.judul] || 0) + 1; }); } });
     return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
   }
 
+  // ===== render keuangan =====
   function renderKeuangan() {
     var tp = ledger.filter(function (l) { return l.jenis === 'pemasukan'; }).reduce(function (s, l) { return s + l.nominal; }, 0);
     var te = ledger.filter(function (l) { return l.jenis === 'pengeluaran'; }).reduce(function (s, l) { return s + l.nominal; }, 0);
@@ -96,24 +111,102 @@
     });
   }
 
+  // ===== render menu =====
   function renderMenu() {
     tabelMenuBody.innerHTML = '';
     APP_DATA.menu.forEach(function (m) {
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + esc(m.nama) + '</td><td>' + rupiah(m.harga) + '</td><td>' + esc(m.kategori) + '</td><td>' + esc(m.deskripsi) + '</td>';
+      var paket = m.paketan || false;
+      tr.innerHTML = '<td><img src="' + (m.gambar || '') + '" alt="' + esc(m.nama) + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" /></td>' +
+        '<td>' + esc(m.nama) + '</td><td>' + rupiah(m.harga) + '</td><td>' + esc(m.kategori) + '</td><td>' + esc(m.deskripsi) + '</td>' +
+        '<td><span class="tag' + (paket ? ' tag-paket' : '') + '">' + (paket ? '📦 Paket' : 'Individu') + '</span></td>';
       tabelMenuBody.appendChild(tr);
     });
   }
 
+  // ===== render resep (list) =====
   function renderResep() {
-    daftarResep.innerHTML = '';
+    resepList.innerHTML = '';
     APP_DATA.recipes.forEach(function (r) {
-      var card = document.createElement('div'); card.className = 'resep-card';
-      card.innerHTML = '<h3>' + esc(r.nama) + ' <span class="tag">' + esc(r.tag) + '</span></h3><p><strong>Bahan:</strong> ' + esc(r.bahan) + '</p><p><strong>Langkah:</strong> ' + esc(r.langkah) + '</p>';
-      daftarResep.appendChild(card);
+      var card = document.createElement('div');
+      card.className = 'resep-card';
+      var paket = r.paketan || false;
+      card.innerHTML =
+        '<img src="' + (r.gambar || '') + '" alt="' + esc(r.judul) + '" style="width:100%;height:130px;object-fit:cover;border-radius:8px;" />' +
+        '<div class="resep-card-body">' +
+          '<h3 class="resep-card-title">' + esc(r.judul) + ' <span class="tag">' + esc((paket ? '📦 ' : '') + (r.hasil || 1) + ' buah / adonan') + '</span></h3>' +
+          (r.est_harga ? '<p class="resep-card-eh">Estimasi harga: Rp ' + rupiah(r.est_harga) + ' / buah</p>' : '') +
+          '<p class="resep-card-deskripsi">' + esc(r.deskripsi || '') + '</p>' +
+          '<div class="resep-card-actions"><button class="btn-ghost btn-sm" data-act="detail" data-id="' + r.id + '">Lihat Detail</button></div>' +
+        '</div>';
+      resepList.appendChild(card);
     });
   }
 
+  // ===== render resep detail + batch scaler =====
+  function renderResepDetail(id) {
+    var r = APP_DATA.recipes.filter(function (x) { return x.id == id; })[0];
+    if (!r) return;
+    scalerResep = 1;
+    var el = resepDetail;
+    el.innerHTML = '';
+    el.className = 'resep-detail';
+    var paket = r.paketan || false;
+    var card = document.createElement('div');
+    card.className = 'resep-detail-card';
+    var bahanPer = function (mult) {
+      return r.bahan ? r.bahan.map(function (b) {
+        var q = parseQty(b.qty, mult);
+        return '<div class="bahan-row"><span class="bahan-nama">' + esc(b.nama) + '</span><span class="bahan-qty">' + esc(q) + '</span></div>';
+      }).join('') : '';
+    };
+    card.innerHTML =
+      '<img src="' + (r.gambar || '') + '" alt="' + esc(r.judul) + '" />' +
+      '<div class="resep-detail-head">' +
+        '<span class="tag">' + esc((paket ? '📦 ' : '') + (r.hasil || 1) + ' buah / adonan') + '</span>' +
+        (r.est_harga ? '<span class="est-harga">Estimasi harga: Rp ' + rupiah(r.est_harga) + ' / buah</span>' : '') +
+        (paket ? '<span class="tag tag-paket">📦 Paketan</span>' : '') +
+      '</div>' +
+      (r.deskripsi ? '<p class="resep-detail-deskripsi">' + esc(r.deskripsi) + '</p>' : '') +
+      '<div class="resep-detail-scaler">' +
+        '<label>Bahan (per <b>' + scalerResep + '</b> adonan)</label>' +
+        '<div class="scaler">' +
+          '<button class="scaler-btn" data-step="-1">−</button>' +
+          '<input class="scaler-input" type="number" value="1" min="1" step="1" />' +
+          '<button class="scaler-btn" data-step="1">+</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="resep-detail-section">' +
+        '<h4>Bahan</h4>' +
+        '<div class="bahan-list">' + (r.bahan ? bahanPer(scalerResep) : '') + '</div>' +
+        '<p class="muted" style="margin:6px 0 0;"><small>per 1 adonan: <b>' + (r.bahan ? parseQty(r.bahan[0].qty, 1) : '') + '</b> · per 2 adonan: <b>' + (r.bahan ? parseQty(r.bahan[0].qty, 2) : '') + '</b></small></p>' +
+      '</div>' +
+      '<div class="resep-detail-section">' +
+        '<h4>Cara membuat</h4>' +
+        '<p class="resep-detail-langkah">' + esc(r.langkah || '') + '</p>' +
+      '</div>' +
+      (r.youtube ? '<div class="resep-detail-section resep-video">' +
+        '<h4>📺 Video</h4>' +
+        '<div class="youtube-embed"><iframe src="https://www.youtube.com/embed/' + youtubeId(r.youtube) + '" frameborder="0" allowfullscreen></iframe></div>' +
+      '</div>' : '') +
+      '<div class="resep-detail-actions"><button class="btn-ghost" data-act="close">Tutup</button></div>';
+    el.appendChild(card);
+    el.querySelectorAll('.scaler-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        scalerResep = Math.max(1, parseInt(el.querySelector('.scaler-input').value, 10) + parseInt(b.getAttribute('data-step'), 10));
+        el.querySelector('.scaler-input').value = scalerResep;
+        renderResepDetail(r.id);
+      });
+    });
+    el.querySelector('.scaler-input').addEventListener('change', function () {
+      scalerResep = Math.max(1, parseInt(this.value, 10) || 1);
+      renderResepDetail(r.id);
+    });
+    el.querySelector('[data-act="close"]').addEventListener('click', function () { resepDetail.className = 'resep-detail'; resepDetail.innerHTML = ''; });
+    el.classList.add('is-active');
+  }
+
+  // ===== render produk =====
   function renderProduk() {
     tableProdukBody.innerHTML = '';
     PRODUCTS.forEach(function (p) {
@@ -123,6 +216,7 @@
     });
   }
 
+  // ===== dashboard =====
   function renderDashboard() {
     var tp = ledger.filter(function (l) { return l.jenis === 'pemasukan'; }).reduce(function (s, l) { return s + l.nominal; }, 0);
     var te = ledger.filter(function (l) { return l.jenis === 'pengeluaran'; }).reduce(function (s, l) { return s + l.nominal; }, 0);
@@ -135,6 +229,7 @@
     renderCategory();
     renderMenuPop();
     renderProductPop();
+    renderRecipePop();
     renderSourceStatus();
   }
 
@@ -146,7 +241,7 @@
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     container.innerHTML = recent.map(function (k) {
       var v = { pemasukan: 0, pengeluaran: 0 };
-      if (ledger) { ledger.forEach(function (l) { if (l.tanggal && l.tanggal.slice(0, 7) === k) { if (l.jenis === 'pemasukan') v.pemasukan += l.nominal; else v.pengeluaran += l.nominal; } }); }
+      ledger.forEach(function (l) { if (l.tanggal && l.tanggal.slice(0, 7) === k) { if (l.jenis === 'pemasukan') v.pemasukan += l.nominal; else v.pengeluaran += l.nominal; } });
       var mIdx = parseInt(k.slice(5, 7), 10) - 1;
       var mName = months[mIdx] + ' ' + k.slice(0, 4);
       var mx = Math.max(v.pemasukan, v.pengeluaran, 1);
@@ -171,13 +266,19 @@
 
   function renderMenuPop() {
     var counts = {};
-    ledger.forEach(function (l) {
-      if (l.jenis === 'pemasukan') { APP_DATA.menu.forEach(function (m) { if (m.nama.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[m.nama] = (counts[m.nama] || 0) + 1; }); }
-    });
+    ledger.forEach(function (l) { if (l.jenis === 'pemasukan') { APP_DATA.menu.forEach(function (m) { if (m.nama.toLowerCase().indexOf(l.deskripsi.toLowerCase()) >= 0) counts[m.nama] = (counts[m.nama] || 0) + 1; }); } });
     var el = menuPop;
     if (!Object.keys(counts).length) { el.innerHTML = '<p class="empty">Belum ada penjualan yang kaitannya.</p>'; return; }
     var sorted = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
     el.innerHTML = sorted.map(function (nm) { return '<div class="menu-pop-item"><div class="nm">' + esc(nm) + '</div><span class="st">' + counts[nm] + ' transaksi</span></div>'; }).join('');
+  }
+
+  function renderRecipePop() {
+    var counts = recipeSales();
+    var el = recipePop;
+    if (!Object.keys(counts).length) { el.innerHTML = '<p class="empty">Belum ada penjualan resep.</p>'; return; }
+    var sorted = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+    el.innerHTML = sorted.map(function (nm) { return '<div class="menu-pop-item"><div class="nm">' + esc(nm) + '</div><span class="st">' + counts[nm] + ' terjual</span></div>'; }).join('');
   }
 
   function renderProductPop() {
@@ -197,89 +298,7 @@
     sourceCountEl.textContent = 'Sumber: ' + SOURCES.length;
   }
 
-  function fetchExternalSource(kind, q) {
-    var sec = document.createElement('div'); sec.className = 'search-result-group';
-    sec.innerHTML = '<div class="src">⏳ Memuat...</div><div class="meta">loading...</div>';
-    searchResults.appendChild(sec);
-    if (kind === 'wiki') {
-      var wikiUrl = 'https://id.wikipedia.org/w/api.php?action=opensearch&search=' + encodeURIComponent(q) + '&limit=6&format=json';
-      fetch(wikiUrl).then(function (r) { return r.json(); }).then(function (d) {
-        var results = (d[1] || []).map(function (t, i) { return { name: t, url: 'https://id.wikipedia.org/wiki/' + encodeURIComponent(t), meta: 'Wikipedia' }; });
-        renderFetchResults(results, 'Wikipedia');
-      }).catch(function (e) { renderFetchError('Gagal mengambil Wikipedia: ' + e.message); });
-    } else if (kind === 'off') {
-      var offUrl = 'https://world.openfoodfacts.org/cgi/search.pl?search_terms=' + encodeURIComponent(q) + '&search_simple=1&json=1&page_size=6';
-      fetch(offUrl).then(function (r) { return r.json(); }).then(function (d) {
-        var results = (d.products || []).slice(0, 6).map(function (p) { return { name: p.product_name, url: p.url || '#', meta: (p.brands || 'OpenFoodFacts') }; });
-        renderFetchResults(results, 'OpenFoodFacts');
-      }).catch(function (e) { renderFetchError('Gagal mengambil OpenFoodFacts: ' + e.message); });
-    } else if (kind === 'weather') {
-      var lat = 6.2088, lon = 106.8456;
-      var weathUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=Asia%2FJakarta';
-      fetch(weathUrl).then(function (r) { return r.json(); }).then(function (d) {
-        var cur = d.current || {};
-        var res = { name: APP_DATA.weatherSample.city, meta: 'Cuaca hari ini', temp: cur.temperature_2m ? '😐 ' + cur.temperature_2m + '°C' : '', wind: cur.wind_speed_10m ? 'Angin ' + cur.wind_speed_10m + ' km/j' : '', hum: cur.relative_humidity_2m ? 'Kelembapan ' + cur.relative_humidity_2m + '%' : '' };
-        renderFetchResults([res], 'Open-Meteo');
-      }).catch(function (e) { renderFetchError('Gagal cuaca: ' + e.message); });
-    } else if (kind === 'news') {
-      var sample = [{ name: 'Berita: Lapangan dagang makanan sehat naik', meta: 'Sample (butuh API key di produksi)', url: '#' }];
-      renderFetchResults(sample, 'News (demo)');
-    }
-  }
-
-  function renderFetchResults(results, title) {
-    var sec = document.querySelector('#fetch-output');
-    if (!sec) return;
-    sec.innerHTML = '<div class="card"><h3>' + esc(title) + '</h3><div class="source-list">' + results.map(function (r) {
-      return '<div class="source-item"><span class="badge ok">🔍</span><div><div class="name">' + esc(r.name) + '</div><div class="note">' + esc(r.meta) + '</div></div></div>';
-    }).join('') + '</div></div>';
-  }
-
-  function renderFetchError(msg) {
-    var sec = document.querySelector('#fetch-output');
-    if (!sec) return;
-    sec.innerHTML = '<div class="muted"><span class="empty">' + esc(msg) + '</span></div>';
-  }
-
-  function searchLocal(q) {
-    var res = { menu: [], resep: [], keuangan: [], produk: [], total: 0 };
-    APP_DATA.menu.forEach(function (m) { if (m.nama.toLowerCase().indexOf(q.toLowerCase()) >= 0 || m.deskripsi.toLowerCase().indexOf(q.toLowerCase()) >= 0) { res.menu.push(m); res.total++; } });
-    APP_DATA.recipes.forEach(function (r) { if (r.nama.toLowerCase().indexOf(q.toLowerCase()) >= 0 || r.bahan.toLowerCase().indexOf(q.toLowerCase()) >= 0 || r.langkah.toLowerCase().indexOf(q.toLowerCase()) >= 0) { res.resep.push(r); res.total++; } });
-    PRODUCTS.forEach(function (p) { if (p.nama.toLowerCase().indexOf(q.toLowerCase()) >= 0 || p.deskripsi.toLowerCase().indexOf(q.toLowerCase()) >= 0) { res.produk.push(p); res.total++; } });
-    var keu = ledger.filter(function (l) { return l.deskripsi.toLowerCase().indexOf(q.toLowerCase()) >= 0 || l.kategori.toLowerCase().indexOf(q.toLowerCase()) >= 0; });
-    keu.forEach(function (l) { res.keuangan.push(l); res.total++; });
-    return res;
-  }
-
-  function renderSearch() {
-    var q = searchInput.value.trim();
-    var res = searchLocal(q);
-    var html = '<div class="search-result-group"><div class="src">🔍 Hasil Temuan</div></div>';
-    var groups = [
-      ['📋 Menu', res.menu, 'menu'],
-      ['👩‍🍳 Resep', res.resep, 'resep'],
-      ['📦 Produk', res.produk, 'menu'],
-      ['💰 Keuangan', res.keuangan, 'keuangan']
-    ];
-    var hasLocal = false;
-    groups.forEach(function (g) {
-      if (g[1].length) { hasLocal = true; html += '<div class="search-result-group" data-tab="' + g[2] + '"><div class="src">' + g[0] + '</div>';
-        g[1].forEach(function (item) {
-          var nm = item.nama || item.deskripsi || '';
-          html += '<div class="name">' + esc(nm) + '</div><div class="meta">' + esc((item.kategori || item.jenis || '') + ' · ' + esc(item.sku || '')) + '</div></div>';
-        });
-      }
-    });
-    if (q) {
-      html += '<div class="search-hint">atau cari di sumber eksternal: <button id="btn-wiki" class="btn-sm">Wikipedia</button> <button id="btn-of" class="btn-sm">OpenFoodFacts</button> <button id="btn-weather" class="btn-sm">Cuaca</button></div>';
-    }
-    searchResults.innerHTML = html;
-    ['btn-wiki', 'btn-of', 'btn-weather'].forEach(function (id) {
-      var b = document.getElementById(id);
-      if (b) { b.addEventListener('click', function () { fetchExternalSource(b.id === 'btn-wiki' ? 'wiki' : b.id === 'btn-of' ? 'off' : 'weather', q); }); }
-    });
-  }
-
+  // ===== export / import =====
   function downloadCSV(filename, rows) {
     var header = rows[0].map(function (h) { return '"' + String(h).replace(/"/g, '""') + '"'; }).join(',');
     var body = rows.slice(1).map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
@@ -293,8 +312,8 @@
   function exportCSV(type) {
     var rows = [];
     if (type === 'keuangan') { rows.push(['Tanggal', 'Jenis', 'Deskripsi', 'Nominal', 'Kategori']); ledger.forEach(function (l) { rows.push([l.tanggal, l.jenis, l.deskripsi, l.nominal, l.kategori]); }); }
-    else if (type === 'menu') { rows.push(['Nama', 'Harga', 'Kategori', 'Deskripsi']); APP_DATA.menu.forEach(function (m) { rows.push([m.nama, m.harga, m.kategori, m.deskripsi]); }); }
-    else if (type === 'resep') { rows.push(['Nama', 'Bahan', 'Langkah', 'Tag']); APP_DATA.recipes.forEach(function (r) { rows.push([r.nama, r.bahan, r.langkah, r.tag]); }); }
+    else if (type === 'menu') { rows.push(['Nama', 'Harga', 'Kategori', 'Deskripsi', 'Tipe']); APP_DATA.menu.forEach(function (m) { rows.push([m.nama, m.harga, m.kategori, m.deskripsi, m.paketan ? 'Paketan' : 'Individu']); }); }
+    else if (type === 'resep') { rows.push(['Judul', 'HASIL', 'Estimasi Harga', 'Bahan', 'Langkah', 'YouTube']); APP_DATA.recipes.forEach(function (r) { rows.push([r.judul, r.hasil, r.est_harga, r.bahan.map(function (b) { return b.nama + ' ' + b.qty + ' ' + b.satuan; }).join('; '), r.langkah, r.youtube]); }); }
     else if (type === 'produk') { rows.push(['Nama', 'SKU', 'Harga', 'Stok', 'Kategori', 'Deskripsi']); PRODUCTS.forEach(function (p) { rows.push([p.nama, p.sku, p.harga, p.stok, p.kategori, p.deskripsi]); }); }
     downloadCSV(type + '.csv', rows);
   }
@@ -371,23 +390,43 @@
     e.preventDefault();
     var nama = document.getElementById('nama-menu').value.trim();
     var harga = parseInt(document.getElementById('harga-menu').value, 10);
+    var paketan = paketanCheck.checked;
+    var hargaPaket = parseInt(document.getElementById('harga-paket').value, 10);
     var kategori = document.getElementById('kategori-menu').value.trim() || 'Umum';
     var deskripsi = document.getElementById('deskripsi-menu').value.trim();
     if (!nama || !harga) return;
-    APP_DATA.menu.push({ id: menuId || 100, nama: nama, harga: harga, kategori: kategori, deskripsi: deskripsi });
+    APP_DATA.menu.push({ id: menuId || 200, nama: nama, harga: paketan ? (hargaPaket || harga) : harga, paketan: paketan, kategori: kategori, deskripsi: deskripsi, detail_paket: paketan ? 'Lihat detail paket' : '' });
     renderMenu();
     formMenu.reset();
+    paketanCheck.checked = false;
+    document.getElementById('harga-paket').value = '';
   });
 
   formResep.addEventListener('submit', function (e) {
     e.preventDefault();
-    var nama = document.getElementById('nama-resep').value.trim();
-    var bahan = document.getElementById('bahan-resep').value.trim();
+    var judul = document.getElementById('nama-resep').value.trim();
+    var deskripsi = document.getElementById('deskripsi-resep').value.trim();
+    var hasil = parseInt(document.getElementById('hasil-resep').value, 10) || 1;
+    var est_harga = parseInt(document.getElementById('est-harga-resep').value, 10) || 0;
+    var bahanText = document.getElementById('bahan-resep').value.trim();
+    var bahan = [];
+    if (bahanText) {
+      bahanText.split('\n').forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var parts = line.split('|');
+        var nama = parts[0].trim();
+        var qty = parts[1] ? parts[1].trim() : '';
+        var satuan = parts[2] ? parts[2].trim() : '';
+        if (nama) bahan.push({ nama: nama, qty: qty, satuan: satuan });
+      });
+    }
     var langkah = document.getElementById('langkah-resep').value.trim();
-    var tag = document.getElementById('tag-resep').value.trim() || 'Umum';
-    if (!nama || !bahan || !langkah) return;
-    APP_DATA.recipes.push({ id: resepId || 200, nama: nama, bahan: bahan, langkah: langkah, tag: tag });
+    var youtube = document.getElementById('youtube-resep').value.trim();
+    if (!judul || !langkah) return;
+    APP_DATA.recipes.push({ id: resepId || 300, judul: judul, deskripsi: deskripsi, hasil: hasil, est_harga: est_harga, bahan: bahan, langkah: langkah, youtube: youtube });
     renderResep();
+    renderResepDetail(APP_DATA.recipes[APP_DATA.recipes.length - 1].id);
     formResep.reset();
   });
 
@@ -406,8 +445,14 @@
     }
   });
 
+  resepList.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-act="detail"]');
+    if (btn) { var id = parseInt(btn.getAttribute('data-id'), 10); renderResepDetail(id); }
+  });
+
   document.getElementById('btn-export').addEventListener('click', function () { exportCSV('keuangan'); });
   document.getElementById('btn-export-menu').addEventListener('click', function () { exportCSV('menu'); });
+  document.getElementById('btn-export-resep').addEventListener('click', function () { exportCSV('resep'); });
   document.getElementById('btn-export-produk').addEventListener('click', function () { exportCSV('produk'); });
   document.getElementById('btn-export-all').addEventListener('click', exportAll);
   document.getElementById('btn-reset').addEventListener('click', function () { resetLedger(); });

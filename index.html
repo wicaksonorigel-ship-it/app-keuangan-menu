@@ -74,30 +74,45 @@
 
     <section id="menu" class="panel" data-panel="menu">
       <div class="card">
-        <div class="card-head"><h2>Menu Yang Dijual</h2><span class="muted">tambahkan menu baru disini</span></div>
+        <div class="card-head"><h2>Menu Yang Dijual</h2><span class="muted">tambahkan menu baru. Paketan tampil dengan badge &amp; gambar.</span></div>
         <form id="form-menu" class="form-inline">
           <input id="nama-menu" placeholder="Nama menu" required />
           <input id="harga-menu" type="number" min="1" placeholder="Harga (Rp)" required />
-          <input id="kategori-menu" placeholder="Kategori (Makanan/Minuman)" />
+          <div class="form-actions" style="flex-direction:column;align-items:stretch;gap:4px;padding-right:8px;">
+            <label class="checkbox-row" style="display:flex;gap:8px;align-items:center;font-size:14px;">
+              <input type="checkbox" id="paketan-check" style="width:auto;" /> <strong>Paketan</strong> (beda pembayaran)
+            </label>
+            <input id="harga-paket" type="number" min="1" placeholder="Harga jika paketan" style="width:100%;" />
+          </div>
+          <input id="kategori-menu" placeholder="Kategori (Makanan/Minuman/Paket)" />
           <textarea id="deskripsi-menu" placeholder="Deskripsi singkat"></textarea>
-          <div class="form-actions"><button type="submit" class="btn-primary">Tambah Menu</button></div>
+          <div class="form-actions" style="justify-content:flex-end;">
+            <button type="submit" class="btn-primary">Tambah Menu</button>
+          </div>
         </form>
-        <div class="table-wrap"><table id="tabel-menu"><thead><tr><th>Nama</th><th>Harga</th><th>Kategori</th><th>Deskripsi</th></tr></thead><tbody></tbody></table></div>
+        <div class="table-wrap"><table id="tabel-menu"><thead><tr><th>Gambar</th><th>Nama</th><th>Harga</th><th>Kategori</th><th>Deskripsi</th><th>Tipe</th></tr></thead><tbody></tbody></table></div>
       </div>
     </section>
 
     <section id="resep" class="panel" data-panel="resep">
       <div class="card">
-        <div class="card-head"><h2>Resep Adonan</h2><span class="muted">langkah pembuatan masing-masing produk</span></div>
-        <form id="form-resep" class="form-inline">
-          <input id="nama-resep" placeholder="Nama resep" required />
-          <input id="bahan-resep" placeholder="Bahan (pisah koma)" required />
-          <textarea id="langkah-resep" placeholder="Langkah pembuatan" required></textarea>
-          <input id="tag-resep" placeholder="Tag/kategori (contoh: Ayam, Nasi)" />
-          <div class="form-actions"><button type="submit" class="btn-primary">Tambah Resep</button></div>
-        </form>
-        <div id="daftar-resep" class="resep-grid"></div>
+        <div class="card-head"><h2>Resep Adonan</h2><span class="muted">klik resep untuk detail &amp; langkah. Bahan bisa dihitung per 1 atau 2 adonan.</span></div>
+        <div id="resep-list" class="resep-grid"></div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-head"><h2>Tambah Resep</h2><span class="muted">isi untuk menambah resep baru</span></div>
+          <form id="form-resep" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));max-width:820px;">
+            <input id="nama-resep" placeholder="Nama resep" />
+            <input id="hasil-resep" type="number" min="1" placeholder="Hasil (berapa buah)" />
+            <input id="est-harga-resep" type="number" min="1" placeholder="Estimasi harga / buah" />
+            <textarea id="deskripsi-resep" placeholder="Deskripsi singkat" style="grid-column:span 2;"></textarea>
+            <textarea id="bahan-resep" placeholder="Bahan (satu per baris: Nama | qty | satuan)" style="grid-column:span 2;"></textarea>
+            <textarea id="langkah-resep" placeholder="Langkah pembuatan" style="grid-column:span 2;"></textarea>
+            <input id="youtube-resep" placeholder="YouTube URL / ID (opsional)" />
+            <div class="form-actions" style="justify-content:flex-end;"><button type="submit" class="btn-primary">Tambah Resep</button></div>
+          </form>
+        </div>
       </div>
+      <div id="resep-detail" class="resep-detail"></div>
     </section>
 
     <section id="dashboard" class="panel" data-panel="dashboard">
@@ -111,6 +126,7 @@
       <div class="card"><div class="card-head"><h2>Pengeluaran per Kategori</h2></div><div id="chart-category" class="chart category-chart"></div></div>
       <div class="card"><div class="card-head"><h2>Menu Terlaris</h2></div><div id="menu-pop" class="menu-pop"></div></div>
       <div class="card"><div class="card-head"><h2>Produk Laris</h2></div><div id="product-pop" class="menu-pop"></div></div>
+      <div class="card"><div class="card-head"><h2>Resep Terlaris</h2></div><div id="recipe-pop" class="menu-pop"></div></div>
     </section>
 
     <section id="sources" class="panel" data-panel="sources">

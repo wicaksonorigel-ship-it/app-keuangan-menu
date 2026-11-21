@@ -1,21 +1,21 @@
 /* ============================================================
    DATA EDITABLE — ganti sesuai menu, resep & produk kamu.
-   /!\\ JANGAN hapus baris "window.APP_DATA = APP_DATA;" /!\\
    ============================================================ */
 
 const APP_DATA = {
   menu: [
-    { id: 1, nama: 'Nasi Goreng Spesial', harga: 18000, kategori: 'Makanan', deskripsi: 'Nasi beras premium, sayur, telur, sosis, teh manis.' },
-    { id: 2, nama: 'Mie Ayam Bareng Kakak', harga: 15000, kategori: 'Makanan', deskripsi: 'Mie kocak, ayam irit, telur, kuah kaldu kaya.' },
-    { id: 3, nama: 'Ayam Goreng Krupuk', harga: 20000, kategori: 'Makanan', deskripsi: 'Ayam goreng renyah, disajai dengan ketan & keripik.' },
-    { id: 4, nama: 'Es Teh Tarik', harga: 8000, kategori: 'Minuman', deskripsi: 'Teh tawar, air susu, gula, direntangkan.' },
-    { id: 5, nama: 'Es Pelay', harga: 12000, kategori: 'Minuman', deskripsi: 'Es batu, susu cair, sirup, es campur.' },
+    { id: 1, nama: 'Nasi Goreng Spesial', gambar: 'https://placehold.co/320x200/f5e6d3/e07a3f?text=Nasi+Goreng', harga: 18000, paketan: false, kategori: 'Makanan', deskripsi: 'Nasi beras premium, sayur, telur, sosis, teh manis.' },
+    { id: 2, nama: 'Mie Ayam Bareng Kakak', gambar: 'https://placehold.co/320x200/f5e6d3/e07a3f?text=Mie+Ayam', harga: 15000, paketan: false, kategori: 'Makanan', deskripsi: 'Mie kocak, ayam irit, telur, kuah kaldu kaya.' },
+    { id: 3, nama: 'Ayam Goreng Krupuk', gambar: 'https://placehold.co/320x200/f5e6d3/e07a3f?text=Ayam+Goreng+Krupuk', harga: 20000, paketan: true, kategori: 'Makanan', deskripsi: 'Ayam goreng renyah, disajai dengan ketan & keripik.', detail_paket: '1 paket = 4 potong ayam + ketan' },
+    { id: 4, nama: 'Es Teh Tarik', gambar: 'https://placehold.co/320x200/f5e6d3/e07a3f?text=Es+Teh+Tarik', harga: 8000, paketan: false, kategori: 'Minuman', deskripsi: 'Teh tawar, air susu, gula, direntangkan.' },
+    { id: 5, nama: 'Es Pelay', gambar: 'https://placehold.co/320x200/f5e6d3/e07a3f?text=Es+Pelay', harga: 12000, paketan: false, kategori: 'Minuman', deskripsi: 'Es batu, susu cair, sirup, es campur.' },
+    { id: 6, nama: 'Paket Risol Mayo', gambar: 'https://placehold.co/320x200/f5e6d3/e07a3f?text=Paket+Risol', harga: 25000, paketan: true, kategori: 'Paket', deskripsi: 'Hemat belanja.', detail_paket: 'Risol 4 buah + sambal 1 botol' },
   ],
 
   recipes: [
-    { id: 1, nama: 'Bumbu Ayam Goreng', bahan: '1 kg ayam, 3 sdm bumbu halus, 1 sdm minyak goreng, garam & merica sesuai rasa', langkah: '1. Cukur & kukus ayam. 2. Aduk bumbu halus dengan minyak goreng. 3. Goreng ayam hingga kalis.', tag: 'Ayam' },
-    { id: 2, nama: 'Bumbu Mie Ayam', bahan: '100 g mi, 60 g bumbu halus, 200 ml kaldu, 1 butir telur', langkah: '1. Rebus mi. 2. Rebus kaldu + bumbu. 3. Rebus mi dalam kaldu. 4. Olesi telur di atas mi.', tag: 'Mie' },
-    { id: 3, nama: 'Adonan Pekak Ringan', bahan: '200 g tepung terigu, 1/2 sdt baking powder, 1 sdm minyak, 3 sdt air', langkah: '1. Aduk tepung + baking powder. 2. Tambah minyak & air, aduk adonan. 3. Kukus 20 menit.', tag: 'Pekak' },
+    { id: 1, judul: 'Risol Mayo', hasil: 4, gambar: 'https://placehold.co/640x400/f5e6d3/e07a3f?text=Risol+Mayo', est_harga: 5000, deskripsi: 'Risol saus mayonese kenyal, renyah, cocok hangat-hangat.', bahan: [ { nama: 'Tepung terigu', qty: 200, satuan: 'gram' }, { nama: 'Telur', qty: 2, satuan: 'buah' }, { nama: 'Mayones', qty: 100, satuan: 'gram' }, { nama: 'Minyak goreng', qty: 3, satuan: 'sdm' }, { nama: 'Garami', qty: 'secukupnya', satuan: '' } ], langkah: '1. Kocok telur, garam, merica, dan minyak panas sampai mengental. 2. Campur tepung terigu, aduk rata. 3. Rendam adonan, masukkan singkong, panggang hingga kering dan emas. 4. Campur mayones, susu, dan kaldu sebagai saus. 5. Sajikan panas.', youtube: 'https://www.youtube.com/watch?v=example1' },
+    { id: 2, judul: 'Mie Nasi Goreng', hasil: 2, gambar: 'https://placehold.co/640x400/f5e6d3/e07a3f?text=Mie+Nasi+Goreng', est_harga: 20000, deskripsi: 'Nasi goreng gurih dengan telur dan ayam.', bahan: [ { nama: 'Nasi putih', qty: 300, satuan: 'gram' }, { nama: 'Telur', qty: 2, satuan: 'buah' }, { nama: 'Ayam irit', qty: 150, satuan: 'gram' }, { nama: 'Bawang goreng', qty: 30, satuan: 'gram' } ], langkah: '1. Panggang ayam, iris bawang goreng. 2. Tumis telur, kukus nasi. 3. Tumis bumbu, masukkan ayam, nasi, saus. 4. Aduk rata, sajikan.', youtube: 'https://www.youtube.com/watch?v=example2' },
+    { id: 3, judul: 'Ayam Goreng Krupuk', hasil: 8, gambar: 'https://placehold.co/640x400/f5e6d3/e07a3f?text=Ayam+Goreng+Krupuk', est_harga: 10000, deskripsi: 'Ayam goreng dengan krupuk renyah.', bahan: [ { nama: 'Ayam', qty: 500, satuan: 'gram' }, { nama: 'Tepung terigu', qty: 100, satuan: 'gram' }, { nama: 'Minyak goreng', qty: 200, satuan: 'ml' }, { nama: 'Krupuk', qty: 50, satuan: 'lembar' } ], langkah: '1. Cukur ayam, masak kering. 2. Baluri tepung, goreng ayam. 3. Renyahkan krupuk, sajikan bersama.', youtube: 'https://www.youtube.com/watch?v=example3' },
   ],
 
   products: [
