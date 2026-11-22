@@ -151,6 +151,22 @@
 
   </main>
 
+  <div class="card" style="margin-top:16px;">
+    <div class="card-head"><h2>Export / Import</h2><span class="muted">simpan &amp; muat ulang data aplikasi</span></div>
+    <div class="form-inline" style="max-width:420px;">
+      <button id="btn-export" class="btn-secondary">Export Transaksi</button>
+      <button id="btn-export-menu" class="btn-secondary">Export Menu</button>
+      <button id="btn-export-resep" class="btn-secondary">Export Resep</button>
+      <button id="btn-export-produk" class="btn-secondary">Export Produk</button>
+      <button id="btn-export-all" class="btn-secondary" style="margin-left:8px;">Export Semua</button>
+      <button id="btn-import" class="btn-secondary">Import Transaksi</button>
+      <button id="btn-import-menu" class="btn-secondary">Import Menu</button>
+      <button id="btn-restore" class="btn-secondary">Restore</button>
+      <input id="import-input" type="file" accept=".json" style="display:none;" />
+      <input id="import-input-menu" type="file" accept=".json" style="display:none;" />
+    </div>
+  </div>
+
   <footer class="app-footer">Data keuangan disimpan di browser (localStorage). <code>js/data.js</code> berisi data menu, resep, produk &amp; sumber data.</footer>
 
   <script src="js/data.js"></script>

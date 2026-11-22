@@ -11,7 +11,7 @@
   var nominalInput = $('nominal');
   var tanggalInput = $('tanggal');
   var kategoriInput = $('kategori');
-  var tabelKeuanganBody = $('#tabel-keuangan tbody');
+  var tabelKeuanganBody = $('#tabel-keuangan').querySelector('tbody');
   var totalPemasukanEl = $('total-pemasukan');
   var totalPengeluaranEl = $('total-pengeluaran');
   var totalLabaEl = $('total-laba');
@@ -21,11 +21,11 @@
   var dashProdukEl = $('dash-produk');
   var filterBtns = document.querySelectorAll('.filter-btn');
   var formMenu = $('form-menu');
-  var tabelMenuBody = $('#tabel-menu tbody');
+  var tabelMenuBody = $('#tabel-menu').querySelector('tbody');
   var formResep = $('form-resep');
   var resepList = $('resep-list');
   var resepDetail = $('resep-detail');
-  var tableProdukBody = $('#tabel-produk tbody');
+  var tableProdukBody = $('#tabel-produk').querySelector('tbody');
   var chartMonthly = $('chart-monthly');
   var chartCategory = $('chart-category');
   var menuPop = $('menu-pop');
